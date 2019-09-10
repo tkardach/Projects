@@ -1,4 +1,3 @@
-using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -8,7 +7,6 @@ namespace ImageProcessing
 {
     public static class Compressor
     {
-
         #region Remove Exif
         private static Stream PatchAwayExif(Stream inStream, Stream outStream)
         {
@@ -121,6 +119,8 @@ namespace ImageProcessing
 
         #endregion
 
+        #region Resizing
+
         /// <summary>
         /// Resize an image by a given max resolution. Scales image based on longest side = max resolution.
         /// </summary>
@@ -175,6 +175,10 @@ namespace ImageProcessing
 
             return destImage;
         }
+
+        #endregion
+
+        #region Compression
 
         /// <summary>
         /// Compresses the image based on a certain factor.
@@ -231,5 +235,7 @@ namespace ImageProcessing
             }
             return null;
         }
+
+        #endregion
     }
 }
