@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -58,6 +58,16 @@ namespace ImageProcessing
             if (bmp.RawFormat.Equals(ImageFormat.Jpeg) && bmp.RawFormat.Equals(ImageFormat.Png))
                 return bmp;
 
+            RotateFlipType rotateFlipType = RotateFlipType.RotateNoneFlipNone;
+            foreach (var prop in bmp.PropertyItems)
+            {
+                if (prop.Id == 0x0112) //value of EXIF for orientation
+                {
+                    int orientationValue = bmp.GetPropertyItem(prop.Id).Value[0];
+                    rotateFlipType = GetOrientationToFlipType(orientationValue);
+                }
+            }
+
             // Convert image to memory stream
             var ms = new MemoryStream();
             bmp.Save(ms, bmp.RawFormat);
@@ -66,7 +76,47 @@ namespace ImageProcessing
             var os = new MemoryStream();
             PatchAwayExif(ms, os);
 
-            return Image.FromStream(os);
+            var returnImg = Image.FromStream(os);
+            returnImg.RotateFlip(rotateFlipType);
+            return returnImg;
+        }
+
+        private static RotateFlipType GetOrientationToFlipType(int orientationValue)
+        {
+            RotateFlipType rotateFlipType = RotateFlipType.RotateNoneFlipNone;
+
+            switch (orientationValue)
+            {
+                case 1:
+                    rotateFlipType = RotateFlipType.RotateNoneFlipNone;
+                    break;
+                case 2:
+                    rotateFlipType = RotateFlipType.RotateNoneFlipX;
+                    break;
+                case 3:
+                    rotateFlipType = RotateFlipType.Rotate180FlipNone;
+                    break;
+                case 4:
+                    rotateFlipType = RotateFlipType.Rotate180FlipX;
+                    break;
+                case 5:
+                    rotateFlipType = RotateFlipType.Rotate90FlipX;
+                    break;
+                case 6:
+                    rotateFlipType = RotateFlipType.Rotate90FlipNone;
+                    break;
+                case 7:
+                    rotateFlipType = RotateFlipType.Rotate270FlipX;
+                    break;
+                case 8:
+                    rotateFlipType = RotateFlipType.Rotate270FlipNone;
+                    break;
+                default:
+                    rotateFlipType = RotateFlipType.RotateNoneFlipNone;
+                    break;
+            }
+
+            return rotateFlipType;
         }
 
         #endregion
@@ -86,9 +136,12 @@ namespace ImageProcessing
 
             double ratio = shortestSide / (double)longestSide;
             double scale = maxLength / (double)longestSide;
-            int newWidth = (int)(scale * longestSide);
-            int newHeight = (int)(newWidth * ratio);
-            return ResizeImage(image, newWidth, newHeight);
+            int newLongest = (int)(scale * longestSide);
+            int newShortest = (int)(newLongest * ratio);
+            if (longestSide == image.Width)
+                return ResizeImage(image, newLongest, newShortest);
+            else
+                return ResizeImage(image, newShortest, newLongest);
         }
 
         /// <summary>
